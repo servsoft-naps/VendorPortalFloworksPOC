@@ -108,7 +108,7 @@ def get_employee(id: int):
 
 
 # UPDATE
-@app.put("/employees/update/{id}")
+@app.put("/employees/update")
 def update_employee(id: int, employee: Employee):
     cursor = conn.cursor()
 
@@ -134,7 +134,7 @@ def update_employee(id: int, employee: Employee):
 
 
 # DELETE
-@app.delete("/employees/delete{id}")
+@app.delete("/employees/delete")
 def delete_employee(id: int):
     cursor = conn.cursor()
 

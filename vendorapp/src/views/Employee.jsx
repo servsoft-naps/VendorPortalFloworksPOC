@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import axios from "axios";
 /* ------------------------------------------------------------------ */
 /*  Inline icon set (no external dependency required)                 */
@@ -201,29 +201,84 @@ function Employee() {
     //   setEmployees((list) => [...list, { id, ...employee }]);
     // }
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_ADD_EMPLOYEE}`,
-        employee,
+      if (editingId) {
+        await axios.put(
+          `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_UPDATE_EMPLOYEE}`,
+          employee,
+          {
+            params: {
+              id: editingId,
+            },
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        alert("Employee updated successfully");
+      } else {
+        const response = await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_ADD_EMPLOYEE}`,
+          employee,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+      await getEmployees();
+
+      setEditingId(null);
+
+      setEmployee({
+        name: "",
+        email: "",
+        department: "",
+        status: "",
+      });
+
+      closeModal();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  const getEmployees = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_GET_EMPLOYEES}`,
+      );
+
+      setEmployees(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_DELETE_EMPLOYEE}`,
         {
-          headers: {
-            "Content-Type": "application/json",
+          params: {
+            id: id,
           },
         },
       );
-    } catch (error) {}
 
-    closeModal();
+      await getEmployees();
+    } catch (error) {
+      console.error(error);
+    }
   };
-
-  const handleDelete = (id) =>
-    setEmployees((list) => list.filter((e) => e.id !== id));
+  // setEmployees((list) => list.filter((e) => e.id !== id));
 
   const navItems = [
     { key: "dashboard", label: "Dashboard", icon: icons.dashboard },
     { key: "employees", label: "Employees", icon: icons.users, active: true },
     { key: "settings", label: "Settings", icon: icons.settings },
   ];
-
+  useEffect(() => {
+    getEmployees();
+  }, []);
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased flex">
       {/* ----------------------------- Sidebar ----------------------------- */}
@@ -367,7 +422,7 @@ function Employee() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filtered.map((e) => (
+                  {employees.map((e) => (
                     <tr
                       key={e.id}
                       className="group transition-colors duration-200 hover:bg-slate-50/80"
@@ -420,7 +475,7 @@ function Employee() {
                     </tr>
                   ))}
 
-                  {filtered.length === 0 && (
+                  {employees.length === 0 && (
                     <tr>
                       <td colSpan={4} className="px-5 py-16 text-center">
                         <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-slate-100 text-slate-400">

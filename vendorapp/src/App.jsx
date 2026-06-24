@@ -1,13 +1,37 @@
 import { useState } from 'react'
 import Employee from './views/Employee'
+import AadhaarValidation from './views/AadhaarValidation'
 import './styles/custom.css'
 
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [view, setView] = useState('employees')
 
   return (
     <>
+      <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
+        <button
+          onClick={() => setView('employees')}
+          className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+            view === 'employees'
+              ? 'bg-indigo-600 text-white'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          Employees
+        </button>
+        <button
+          onClick={() => setView('aadhaar')}
+          className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+            view === 'aadhaar'
+              ? 'bg-indigo-600 text-white'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          Aadhaar Validation
+        </button>
+      </div>
+
       {/* <section id="center">
         <div className="hero">
           <img src={heroImg} className="base" width="170" height="179" alt="" />
@@ -116,7 +140,7 @@ function App() {
       <section id="spacer"></section> */}
       {/* <p>Hello world</p>
        */}
-       <Employee/>
+       {view === 'employees' ? <Employee /> : <AadhaarValidation />}
     </>
   )
 }

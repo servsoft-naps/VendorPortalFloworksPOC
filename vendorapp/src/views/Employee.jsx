@@ -138,8 +138,8 @@ const emptyForm = { name: "", email: "", department: "", status: "Active" };
 
 function Employee() {
   // Original form state preserved + extended for status
-  const [employee, setEmployee] = useState(emptyForm);
-  const [employees, setEmployees] = useState(seed);
+  const [vendor, setVendor] = useState(emptyForm);
+  const [vendors, setVendors] = useState(seed);
 
   // UI-only state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -148,34 +148,34 @@ function Employee() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return employees;
-    return employees.filter(
+    if (!q) return vendors;
+    return vendors.filter(
       (e) =>
         e.name.toLowerCase().includes(q) ||
         e.email.toLowerCase().includes(q) ||
         e.department.toLowerCase().includes(q),
     );
-  }, [employees, search]);
+  }, [vendors, search]);
 
   const stats = useMemo(() => {
-    const active = employees.filter((e) => e.status === "Active").length;
-    const depts = new Set(employees.map((e) => e.department)).size;
+    const active = vendors.filter((e) => e.status === 1).length;
+    const depts = new Set(vendors.map((e) => e.department)).size;
     return {
-      total: employees.length,
+      total: vendors.length,
       active,
-      inactive: employees.length - active,
+      inactive: vendors.length - active,
       depts,
     };
-  }, [employees]);
+  }, [vendors]);
 
   const openAdd = () => {
-    setEmployee(emptyForm);
+    setVendor(emptyForm);
     setEditingId(null);
     setIsModalOpen(true);
   };
 
   const openEdit = (e) => {
-    setEmployee({
+    setVendor({
       name: e.name,
       email: e.email,
       department: e.department,
@@ -188,7 +188,7 @@ function Employee() {
   const closeModal = () => setIsModalOpen(false);
 
   const handleChange = (field) => (ev) =>
-    setEmployee((prev) => ({ ...prev, [field]: ev.target.value }));
+    setVendor((prev) => ({ ...prev, [field]: ev.target.value }));
 
   const handleSubmit = async () => {
     // if (!employee.name.trim() || !employee.email.trim()) return;
@@ -201,10 +201,17 @@ function Employee() {
     //   setEmployees((list) => [...list, { id, ...employee }]);
     // }
     try {
+      const payload = {
+        vendor_name: vendor.name,
+        email: vendor.email,
+        phone_number: vendor.phone,
+        company_name: vendor.companyName,
+        status: vendor.status === "Active" ? 1 : 0,
+      };
       if (editingId) {
         await axios.put(
           `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_UPDATE_EMPLOYEE}`,
-          employee,
+          payload,
           {
             params: {
               id: editingId,
@@ -217,8 +224,8 @@ function Employee() {
         alert("Employee updated successfully");
       } else {
         const response = await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_ADD_EMPLOYEE}`,
-          employee,
+          `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_ADD_VENDOR}`,
+          payload,
           {
             headers: {
               "Content-Type": "application/json",
@@ -226,11 +233,11 @@ function Employee() {
           },
         );
       }
-      await getEmployees();
+      await getVendors();
 
       setEditingId(null);
 
-      setEmployee({
+      setVendor({
         name: "",
         email: "",
         department: "",
@@ -242,13 +249,13 @@ function Employee() {
       console.error(error);
     }
   };
-  const getEmployees = async () => {
+  const getVendors = async () => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_GET_EMPLOYEES}`,
+        `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_GET_VENDORS}`,
       );
 
-      setEmployees(response.data);
+      setVendors(response.data);
     } catch (error) {
       console.error(error);
     }
@@ -256,15 +263,15 @@ function Employee() {
   const handleDelete = async (id) => {
     try {
       await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_DELETE_EMPLOYEE}`,
+        `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_DELETE_VENDOR}`,
         {
           params: {
-            id: id,
+            vendor_id: id,
           },
         },
       );
 
-      await getEmployees();
+      await getVendors();
     } catch (error) {
       console.error(error);
     }
@@ -277,7 +284,7 @@ function Employee() {
     { key: "settings", label: "Settings", icon: icons.settings },
   ];
   useEffect(() => {
-    getEmployees();
+    getVendors();
   }, []);
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased flex">
@@ -382,13 +389,13 @@ function Employee() {
               icon={icons.bell}
               tone="amber"
             />
-            <StatCard
+            {/* <StatCard
               label="Departments"
               value={stats.depts}
               hint="Across the org"
               icon={icons.building}
               tone="violet"
-            />
+            /> */}
           </section>
 
           {/* Table card */}
@@ -407,7 +414,7 @@ function Employee() {
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition-all duration-200 hover:bg-indigo-700 hover:shadow-indigo-600/30 active:scale-[0.98]"
               >
                 <Icon path={icons.plus} className="w-4 h-4" />
-                Add Employee
+                Add Vendor Details
               </button>
             </div>
 
@@ -415,47 +422,62 @@ function Employee() {
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    <th className="px-5 py-3.5">Employee</th>
-                    <th className="px-5 py-3.5">Department</th>
+                    <th className="px-5 py-3.5">Vendor Name</th>
+                    <th className="px-5 py-3.5">Email</th>
+                    <th className="px-5 py-3.5">Company Name</th>
+                    <th className="px-5 py-3.5">Phone Number</th>
                     <th className="px-5 py-3.5">Status</th>
-                    <th className="px-5 py-3.5 text-right">Actions</th>
+                    <th className="px-5 py-3.5">Actions</th>
+
+
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {employees.map((e) => (
+                  {vendors.map((e) => (
                     <tr
-                      key={e.id}
+                      key={e.vendor_id}
                       className="group transition-colors duration-200 hover:bg-slate-50/80"
                     >
-                      <td className="px-5 py-4">
+                      {/* <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-slate-100 to-slate-200 text-sm font-semibold text-slate-600">
-                            {e.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .slice(0, 2)
-                              .join("")}
+                           
                           </div>
                           <div className="min-w-0">
                             <p className="truncate font-medium text-slate-900">
-                              {e.name}
+                              {e.vendor_name}
                             </p>
                             <p className="truncate text-xs text-slate-500">
                               {e.email}
                             </p>
                           </div>
                         </div>
+                      </td> */}
+                        <td className="px-5 py-4">
+                        <span className="inline-flex items-center rounded-lg py-1 text-xs font-medium text-slate-600">
+                          {e.vendor_name}
+                        </span>
+                      </td>
+                        <td className="px-5 py-4">
+                        <span className="inline-flex items-center rounded-lg  py-1 text-xs font-medium text-slate-600">
+                          {e.email}
+                        </span>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                          {e.department || "—"}
+                        <span className="inline-flex items-center rounded-lg py-1 text-xs font-medium text-slate-600">
+                          {e.company_name}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="inline-flex items-center rounded-lg py-1 text-xs font-medium text-slate-600">
+                          {e.phone_number}
                         </span>
                       </td>
                       <td className="px-5 py-4">
                         <StatusBadge status={e.status} />
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex items-center justify-end gap-1.5 opacity-60 transition-opacity duration-200 group-hover:opacity-100">
+                        <div className="flex items-center justify-start gap-1.5 opacity-60 transition-opacity duration-200 group-hover:opacity-100">
                           <button
                             onClick={() => openEdit(e)}
                             className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition-all duration-200 hover:bg-indigo-50 hover:text-indigo-600"
@@ -464,7 +486,7 @@ function Employee() {
                             <Icon path={icons.edit} className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(e.id)}
+                            onClick={() => handleDelete(e.vendor_id)}
                             className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition-all duration-200 hover:bg-rose-50 hover:text-rose-600"
                             aria-label="Delete"
                           >
@@ -475,7 +497,7 @@ function Employee() {
                     </tr>
                   ))}
 
-                  {employees.length === 0 && (
+                  {vendors.length === 0 && (
                     <tr>
                       <td colSpan={4} className="px-5 py-16 text-center">
                         <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-slate-100 text-slate-400">
@@ -511,12 +533,12 @@ function Employee() {
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">
-                  {editingId ? "Edit Employee" : "Add Employee"}
+                  {editingId ? "Edit Employee" : "Add Vendor Details"}
                 </h3>
                 <p className="text-sm text-slate-500">
                   {editingId
                     ? "Update the member's details."
-                    : "Fill in the details to add a new member."}
+                    : "Fill in the details to add a new vendor."}
                 </p>
               </div>
               <button
@@ -530,38 +552,46 @@ function Employee() {
             <div className="space-y-4 px-6 py-5">
               <Field label="Full Name">
                 <input
-                  value={employee.name}
+                  value={vendor.name}
                   onChange={handleChange("name")}
                   type="text"
-                  placeholder="e.g. Jane Doe"
+                  placeholder="Enter Vendor Name"
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
                 />
               </Field>
 
               <Field label="Email Address">
                 <input
-                  value={employee.email}
+                  value={vendor.email}
                   onChange={handleChange("email")}
                   type="email"
-                  placeholder="e.g. jane@acme.io"
+                  placeholder="Enter Email"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+                />
+              </Field>
+              <Field label="Company Name">
+                <input
+                  value={vendor.companyName}
+                  onChange={handleChange("companyName")}
+                  placeholder="Enter company Name"
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
                 />
               </Field>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Department">
+                <Field label="Phone Number">
                   <input
-                    value={employee.department}
-                    onChange={handleChange("department")}
+                    value={vendor.phone}
+                    onChange={handleChange("phone")}
                     type="text"
-                    placeholder="e.g. Engineering"
+                    placeholder="Enter Phone Number"
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
                   />
                 </Field>
 
                 <Field label="Status">
                   <select
-                    value={employee.status}
+                    value={vendor.status}
                     onChange={handleChange("status")}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
                   >
@@ -584,7 +614,7 @@ function Employee() {
                 className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition-all duration-200 hover:bg-indigo-700 active:scale-[0.98]"
               >
                 <Icon path={icons.check} className="w-4 h-4" />
-                {editingId ? "Save Changes" : "Add Employee"}
+                {editingId ? "Save Changes" : "Add Vendor"}
               </button>
             </div>
           </div>
@@ -634,7 +664,7 @@ function StatCard({ label, value, hint, icon, tone }) {
 }
 
 function StatusBadge({ status }) {
-  const isActive = status === "Active";
+  const isActive = status === 1;
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -646,7 +676,7 @@ function StatusBadge({ status }) {
       <span
         className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-slate-400"}`}
       />
-      {status}
+      {status===1?"Active":"InActive"}
     </span>
   );
 }
